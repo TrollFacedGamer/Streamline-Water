@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import pymysql
 # classses are capitalized
 from dynaconf import Dynaconf
@@ -29,17 +29,20 @@ def index():
 
 @app.route("/browse")
 def product_browse():
+    query = request.args.get("query")
+
     conn = connect_db()
 
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM `Product` ;")
+    if query is None:
+        cursor.execute("SELECT * FROM `Product`;")
+    else:
+        cursor.execute(f"SELECT * FROM `Product` WHERE `name` LIKE '%{query}%' OR `description` LIKE '%{query}%' OR `ingredients` LIKE '%{query}%';")
 
     results = cursor.fetchall()
 
+    cursor.close()
+    conn.close()
 
     return render_template("browse.html.jinja", products = results)
-
-
-
-
