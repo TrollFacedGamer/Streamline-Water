@@ -46,3 +46,24 @@ def product_browse():
     conn.close()
 
     return render_template("browse.html.jinja", products = results)
+
+@app.route("/product/<product_id>")
+def product_page(product_id):
+    
+    conn = connect_db()
+
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT * FROM `Product` WHERE `id` = {product_id};")
+    # SELECT * refers to all column
+
+    # conn and cursor will be gray and unusable when put after return
+
+    result = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+    # used to not DDOX the database
+
+    return render_template("product.html.jinja", product = result)
+    # if you return with a string the page will just have that string
