@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 import pymysql
 # classses are capitalized
 from dynaconf import Dynaconf
@@ -67,3 +67,54 @@ def product_page(product_id):
 
     return render_template("product.html.jinja", product = result)
     # if you return with a string the page will just have that string
+
+@app.route("/sign_up", methods=["POST", "GET"])
+def sign_up_page():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        confirm_password = request.form["confirm_password"]
+        first_name = request.form["first_name"]
+        last_name = request.form["last_name"]
+        email = request.form["email"]
+        phone_number = request.form["phone_number"]
+        address = request.form["address"]
+        #uses [] because its a dict
+        #werkzeug error means typo in name
+
+        conn = connect_db()
+
+        cursor = conn.cursor()
+
+        cursor.execute(f"""
+        INSERT INTO `Customer` 
+            ( `username`, `password`, `first_name`, `last_name`, `email`, `phone_number`, `address` )
+        VALUES
+            ( '{username}', '{password}', '{first_name}', '{last_name}', '{email}', '{phone_number}', '{address}' ) ;
+        """)
+        # column names need to be in `ticks`
+        
+        cursor.close()
+        conn.close()
+        return redirect("/sign_in")
+
+    return render_template("sign_up.html.jinja")
+
+@app.route("/sign_in")
+def sign_in_page():
+    
+    
+    
+    
+    conn = connect_db()
+
+    cursor = conn.cursor()
+
+    #cursor.execute(f"SELECT * FROM `Product` WHERE `id` = {product_id};")
+
+    cursor.close()
+    conn.close()
+
+    return render_template("sign_in.html.jinja")
+
+#refreshing a form error cause it to send the form again
