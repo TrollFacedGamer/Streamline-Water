@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, flash
 import pymysql
 # classses are capitalized
 from dynaconf import Dynaconf
@@ -9,6 +9,7 @@ conf = Dynaconf(
     settings_file = ["settings.toml"]
 )
 
+app.secret_key = conf.secret_key
 
 def connect_db():
     conn =pymysql.connect(
@@ -83,37 +84,53 @@ def sign_up_page():
         #werkzeug error means typo in name
 
         conn = connect_db()
-
         cursor = conn.cursor()
-
-        cursor.execute(f"""
-        INSERT INTO `Customer` 
-            ( `username`, `password`, `first_name`, `last_name`, `email`, `phone_number`, `address` )
-        VALUES
-            ( '{username}', '{password}', '{first_name}', '{last_name}', '{email}', '{phone_number}', '{address}' ) ;
-        """)
-        # column names need to be in `ticks`
-        
-        cursor.close()
-        conn.close()
-        return redirect("/sign_in")
-
+        if len(password) >= 10:
+            if password == confirm_password:
+                try:
+                    cursor.execute(f"""
+                    INSERT INTO `Customer` 
+                        ( `username`, `password`, `first_name`, `last_name`, `email`, `phone_number`, `address` )
+                    VALUES
+                        ( '{username}', '{password}', '{first_name}', '{last_name}', '{email}', '{phone_number}', '{address}' ) ;
+                    """)
+                    # column names need to be in `ticks`
+                except pymysql.err.IntegrityError:
+                    flash("Sorry, that username/email is already in use.")
+                else:
+                    return redirect("/sign_in")
+                    #ONLY ONE RETURN WILL BE RUN
+                finally:
+                    cursor.close()
+                    conn.close()
+            else:
+                flash("Sorry, Password and Confirm Password must match.")
+        else:
+            flash("Sorry, Your Password need to be stronger: it should be at least 10 characters long")
     return render_template("sign_up.html.jinja")
 
 @app.route("/sign_in")
 def sign_in_page():
-    
-    
-    
-    
-    conn = connect_db()
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        
+        conn = connect_db()
+        cursor = conn.cursor()
 
-    cursor = conn.cursor()
 
-    #cursor.execute(f"SELECT * FROM `Product` WHERE `id` = {product_id};")
+        cursor.execute(f"SELECT * FROM `Product` WHERE `username` = {username};")
 
-    cursor.close()
-    conn.close()
+        account = cursor.fetchone()
+        
+        if password == account["password"]:
+            print("login")
+            #not done
+        else:
+            flash("Sorry, Your Password is incorrect")
+
+        cursor.close()
+        conn.close()
 
     return render_template("sign_in.html.jinja")
 
