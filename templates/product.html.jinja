@@ -30,7 +30,14 @@
                 <hr>
 
                 <label for="buy_btn"><h4>${{ product["price"] }}</h4></label>
-                <button id="buy_btn" type="button" class="btn btn-primary">Buy</button>
+                
+                <form action="/product/{{ product['id'] }}/cart" method="post">
+                  <div class="mb-3">
+                    <label for="quantity" class="form-label">Quantity: </label>
+                    <input type="number" class="form-control w-25" id="quantity" placeholder="1" min="1" max="{{product['stock']}}" value="1" name="quantity">
+                  </div>
+                  <button id="buy_btn" class="btn btn-primary" type="submit">Add to Cart</button>
+                </form>
             </div>
         </div>
     </div>

@@ -197,7 +197,22 @@ def logout():
 
 #refreshing a form error cause it to send the form again
 
-@app.route("/cart")
+@app.route("/product/<product_id>/cart", methods = ["POST", "GET"])
 @flask_login.login_required
-def cart():
-    return "cart page"
+def add_to_cart(product_id):
+    quantity = request.form["quantity"]
+    customer_id = flask_login.current_user.id
+    
+    conn = connect_db()
+    cursor = conn.cursor()
+    
+    cursor.execute(f"""
+    INSERT INTO `Cart` 
+        ( `product_id `, `customer_id `, `quantity` )
+    VALUES
+        ( '{product_id}', '{customer_id}', '{quantity}' ) ;
+    """)
+    
+    cursor.close()
+    conn.close()
+    return redirect("/cart")
