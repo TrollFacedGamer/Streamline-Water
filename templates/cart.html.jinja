@@ -15,6 +15,38 @@
         {%  include  "components/navbar.html.jinja"%}
         {# <!--{% %} repersents a line of python--> #}
         <h1>Cart</h1>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Product</th>
+                <th scope="col">Name</th>
+                <th scope="col">Price</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Total</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+              <tbody>
+                {% for item in cart_products %}
+                  <tr>
+                    <td><img src="{{ item['image'] }}" height="80" alt="Image of {{ item['name'] }}"></td>
+                    <td>{{ item["name"] }}</td>
+                    <td>${{ item["price"] }}</td>
+                    <td>{{ item["quantity"] }}</td>
+                    <td>${{ item["price"] * item["quantity"] }}</td>
+                  </tr>
+                {% endfor %}
+                  <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>Total: $</td>
+                  </tr>
+              </tbody>
+          </table>
+        </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
   </body>

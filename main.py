@@ -208,7 +208,7 @@ def add_to_cart(product_id):
     
     cursor.execute(f"""
     INSERT INTO `Cart` 
-        ( `product_id `, `customer_id `, `quantity` )
+        ( `product_id`, `customer_id`, `quantity` )
     VALUES
         ( '{product_id}', '{customer_id}', '{quantity}' ) ;
     """)
@@ -216,3 +216,29 @@ def add_to_cart(product_id):
     cursor.close()
     conn.close()
     return redirect("/cart")
+
+@app.route("/cart")
+@flask_login.login_required
+def cart_page():
+    conn = connect_db()
+    cursor = conn.cursor()
+    customer_id = flask_login.current_user.id
+    
+    cursor.execute(f"""
+        SELECT 
+            `name`, 
+            `price`, 
+            `image`, 
+            `Cart`.`id`,
+            `quantity`
+        FROM `Cart`
+        JOIN `Product` ON `product_id` = `Product`.`id`
+        WHERE `customer_id` = {customer_id}
+    """)
+    
+    results = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template("cart.html.jinja", cart_products = results)
