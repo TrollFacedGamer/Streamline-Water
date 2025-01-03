@@ -241,4 +241,28 @@ def cart_page():
     cursor.close()
     conn.close()
 
-    return render_template("cart.html.jinja", cart_products = results)
+    total_price_py = 0
+    for cost in results:
+        total_price_py += cost["price"] * cost["quantity"]
+    total_price_py = f"{total_price_py:.2f}"
+
+    return render_template("cart.html.jinja", cart_products = results, total_price = total_price_py)
+
+@app.route("/cart/remove_cart", methods=["POST"])
+def remove_cart():
+    conn = connect_db()
+    cursor = conn.cursor()
+    customer_id = flask_login.current_user.id
+    cart_id = request.form["id"]
+
+    cursor.execute(f"""
+    DELETE FROM Cart 
+    WHERE 
+    `customer_id` = {customer_id}
+    And
+    `Cart`.`id` = {cart_id}
+    ;""")
+    
+    cursor.close()
+    conn.close()
+    return redirect("/cart")
