@@ -210,7 +210,9 @@ def add_to_cart(product_id):
     INSERT INTO `Cart` 
         ( `product_id`, `customer_id`, `quantity` )
     VALUES
-        ( '{product_id}', '{customer_id}', '{quantity}' ) ;
+        ( '{product_id}', '{customer_id}', '{quantity}' ) 
+    ON DUPLICATE KEY UPDATE
+        `quantity` = `quantity` + {quantity};
     """)
     
     cursor.close()
@@ -244,16 +246,15 @@ def cart_page():
     total_price_py = 0
     for cost in results:
         total_price_py += cost["price"] * cost["quantity"]
-    total_price_py = f"{total_price_py:.2f}"
 
     return render_template("cart.html.jinja", cart_products = results, total_price = total_price_py)
 
-@app.route("/cart/remove_cart", methods=["POST"])
-def remove_cart():
+@app.route("/cart/<cart_id>/del", methods=["POST"])
+@flask_login.login_required
+def cart_delete(cart_id):
     conn = connect_db()
     cursor = conn.cursor()
     customer_id = flask_login.current_user.id
-    cart_id = request.form["id"]
 
     cursor.execute(f"""
     DELETE FROM Cart 
@@ -261,6 +262,28 @@ def remove_cart():
     `customer_id` = {customer_id}
     And
     `Cart`.`id` = {cart_id}
+    ;""")
+    
+    cursor.close()
+    conn.close()
+    return redirect("/cart")
+# you can use a value on a button to store the id too.
+
+@app.route("/cart/<cart_id>/update", methods=["POST"])
+@flask_login.login_required
+def cart_update(cart_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    customer_id = flask_login.current_user.id
+    quantity = request.form["quantity"]
+
+    cursor.execute(f"""
+        UPDATE Cart
+        SET `quantity` = {quantity}
+        WHERE     
+            `customer_id` = {customer_id}
+        And
+            `Cart`.`id` = {cart_id}
     ;""")
     
     cursor.close()
