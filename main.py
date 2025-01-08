@@ -289,3 +289,57 @@ def cart_update(cart_id):
     cursor.close()
     conn.close()
     return redirect("/cart")
+
+@app.route("/sales")
+@flask_login.login_required
+def sales_page():
+    conn = connect_db()
+    cursor = conn.cursor()
+    customer_id = flask_login.current_user.id
+    
+    cursor.execute(f"""
+        SELECT 
+            `name`, 
+            `price`, 
+            `image`, 
+            `Cart`.`id`,
+            `quantity`
+        FROM `Cart`
+        JOIN `Product` ON `product_id` = `Product`.`id`
+        WHERE `customer_id` = {customer_id}
+    """)
+    
+    results1 = cursor.fetchall()
+
+    cursor.execute(f"SELECT * FROM `Customer` WHERE `id` = {customer_id};")
+    
+    results2 = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    subtotal_price_py = 0
+    for cost in results1:
+        subtotal_price_py += cost["price"] * cost["quantity"]
+
+    discount = 0
+    discount_dollar = subtotal_price_py * (discount / 100)
+
+    taxes = 0
+    taxes_dollar = (subtotal_price_py + discount_dollar) * (taxes/ 100)
+
+    total = subtotal_price_py + discount_dollar + taxes_dollar
+
+
+    if len(results1) == 0:
+        return redirect("/cart") 
+    else:
+        return render_template("sales.html.jinja", 
+                               cart_products = results1, 
+                               subtotal_price_py = subtotal_price_py, 
+                               results2 = results2, 
+                               discount = discount,
+                               taxes = taxes,
+                               discount_dollar = discount_dollar,
+                               taxes_dollar = taxes_dollar,
+                               total = total)
