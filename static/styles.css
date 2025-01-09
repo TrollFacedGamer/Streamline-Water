@@ -1,8 +1,9 @@
 #homepage_body {
     background-image: url("/static/images/8510.jpg")
 }
-#product_card {
-    background-image: url("/static/images/95438.jpg")
+#product_card_body {
+    background-image: url("/static/images/95438.jpg");
+    color: black;
 }
 #cart_body {
     background-color:deepskyblue;

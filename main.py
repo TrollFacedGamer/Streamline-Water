@@ -249,9 +249,9 @@ def cart_page():
 
     return render_template("cart.html.jinja", cart_products = results, total_price = total_price_py)
 
-@app.route("/cart/<cart_id>/del", methods=["POST"])
+@app.route("/cart/<item_id>/del", methods=["POST"])
 @flask_login.login_required
-def cart_delete(cart_id):
+def cart_delete(item_id):
     conn = connect_db()
     cursor = conn.cursor()
     customer_id = flask_login.current_user.id
@@ -261,7 +261,7 @@ def cart_delete(cart_id):
     WHERE 
     `customer_id` = {customer_id}
     And
-    `Cart`.`id` = {cart_id}
+    `Cart`.`id` = {item_id}
     ;""")
     
     cursor.close()
@@ -343,3 +343,67 @@ def sales_page():
                                discount_dollar = discount_dollar,
                                taxes_dollar = taxes_dollar,
                                total = total)
+
+@app.route("/sales/purchase", methods=["POST"])
+@flask_login.login_required
+def purchase():
+    conn = connect_db()
+    cursor = conn.cursor()
+    customer_id = flask_login.current_user.id
+
+    cursor.execute(f"SELECT * FROM Cart WHERE `customer_id` = {customer_id};")
+    cart = cursor.fetchall()
+
+    cursor.execute(f"""
+        INSERT INTO Sale 
+            (`customer_id`, `status`)
+        VALUES 
+            ({customer_id}, "ongoing");
+    """)
+    
+    sale_id = cursor.lastrowid
+
+    for purchase in cart:   
+        cursor.execute(f"""
+            INSERT INTO SaleProduct 
+                (`sale_id`, `product_id`, `quantity`)
+            VALUES 
+                ({sale_id}, {purchase['product_id']}, {purchase['quantity']});
+        """)
+
+    cursor.execute(f"DELETE FROM Cart WHERE `customer_id` = {customer_id};")
+
+    cursor.close()
+    conn.close()
+    return redirect("/thank_you")
+
+@app.route("/thank_you")
+@flask_login.login_required
+def thank_you_page():
+    return render_template("thank_you.html.jinja")
+
+@app.route("/cart/sales")
+@flask_login.login_required
+def cart_to_sales():
+    return redirect("/sales")
+
+@app.route("/sales/<item_id>/update", methods=["POST"])
+@flask_login.login_required
+def sales_update(item_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    customer_id = flask_login.current_user.id
+    quantity = request.form["quantity"]
+
+    cursor.execute(f"""
+        UPDATE Cart
+        SET `quantity` = {quantity}
+        WHERE     
+            `customer_id` = {customer_id}
+        And
+            `Cart`.`id` = {item_id}
+    ;""")
+    
+    cursor.close()
+    conn.close()
+    return redirect("/sales")

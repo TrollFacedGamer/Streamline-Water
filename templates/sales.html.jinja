@@ -33,7 +33,7 @@
                                 <td>{{ item["name"] }}</td>
                                 <td>${{ "%.2f" | format(item["price"]) }}</td>
                                 <td>
-                                    <form action="/cart/{{ item['id'] }}/update" method="post" id="updateForm-{{ item['id'] }}">
+                                    <form action="/sales/{{ item['id'] }}/update" method="post" id="updateForm-{{ item['id'] }}">
                                     <input type="number" class="form-control" style="width: 80px" value="{{ item['quantity'] }}" min="1" name="quantity">
                                     </form>
                                 </td>

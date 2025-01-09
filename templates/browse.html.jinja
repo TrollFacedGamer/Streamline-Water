@@ -22,13 +22,14 @@
         <main class="container row g-1 row g-md-4 mx-auto">
             {% for item in products %}
               <div class="col-6 col-md-4">
-                <div class="card">
-                  <img src="{{item['image']}}" class="card-img-top md" alt="{{item['name']}}">
-                  <div class="card-body" id="product_card">
-                    <h5 class="card-title">{{ item["name"] }}</h5>
-                    <p class="card-text">${{ "%.2f" | format(item["price"]) }}</p>
-                    <a href="#" class="btn btn-primary">Buy</a>
-                  </div>
+                  <a href="/product/{{ item['id'] }}" class='text-decoration-none'>
+                    <div class="card">
+                    <img src="{{item['image']}}" class="card-img-top md" alt="{{item['name']}}">
+                    <div class="card-body" id='product_card_body'>
+                      <h5 class="card-title">{{ item["name"] }}</h5>
+                      <p class="card-text">${{ "%.2f" | format(item["price"]) }}</p>
+                    </div>
+                  </a>
                 </div>
               </div>
             {% endfor %}
