@@ -86,7 +86,8 @@ def product_browse():
 
 @app.route("/product/<product_id>")
 def product_page(product_id):
-    
+    customer_id = flask_login.current_user.id
+
     conn = connect_db()
 
     cursor = conn.cursor()
@@ -98,6 +99,27 @@ def product_page(product_id):
 
     result = cursor.fetchone()
 
+    cursor.execute(f"""
+                    SELECT  
+                        `Review`.`customer_id`,
+                        `Review`.`rating`,
+                        `Review`.`timestamp`,
+                        `Review`.`comment`,
+                        `Review`.`title`,
+                        `Customer`.`username` 
+                    FROM 
+                        Review
+                    JOIN 
+                        Customer ON `customer_id`= `Customer`.`id`
+                    WHERE
+                        product_id = {product_id};
+                    """)
+
+    reviews = cursor.fetchall()
+
+    cursor.execute(f"SELECT * FROM `Customer` WHERE `id` = {customer_id}")
+    customer = cursor.fetchone
+
     cursor.close()
     conn.close()
     # used to not DDOX the database
@@ -105,7 +127,7 @@ def product_page(product_id):
     if result is None:
         abort(404)
         #redirect to 404 page
-    return render_template("product.html.jinja", product = result)
+    return render_template("product.html.jinja", product = result, reviews = reviews, customer = customer, product_id = product_id)
     # if you return with a string the page will just have that string 
     
 
@@ -399,11 +421,47 @@ def sales_update(item_id):
         UPDATE Cart
         SET `quantity` = {quantity}
         WHERE     
-            `customer_id` = {customer_id}
-        And
-            `Cart`.`id` = {item_id}
-    ;""")
+            `Cart`.`id` = {item_id};
+    """)
     
     cursor.close()
     conn.close()
     return redirect("/sales")
+
+@app.route("/sales/address_update", methods=["POST"])
+@flask_login.login_required
+def address_update():
+    conn = connect_db()
+    cursor = conn.cursor()
+    customer_id = flask_login.current_user.id
+    address = request.form["input_address"]
+
+    cursor.execute(f"""
+        UPDATE Customer
+        SET `address` = '{address}'
+        WHERE     
+            `Customer`.`id` = {customer_id};
+    """)
+    
+    cursor.close()
+    conn.close()
+    return redirect("/sales")
+
+@app.route("/product/<product_id>/review", methods=["POST"])
+@flask_login.login_required
+def review():
+    conn = connect_db()
+    cursor = conn.cursor()
+    customer_id = flask_login.current_user.id
+    address = request.form["input_address"]
+
+    cursor.execute(f"""
+        UPDATE Customer
+        SET `address` = '{address}'
+        WHERE     
+            `Customer`.`id` = {customer_id};
+    """)
+    
+    cursor.close()
+    conn.close()
+    return redirect("/product/<product_id>")

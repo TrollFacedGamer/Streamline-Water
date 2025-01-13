@@ -1,13 +1,19 @@
 #homepage_body {
-    background-image: url("/static/images/8510.jpg")
+    background-image: url("/static/images/8510.jpg");
 }
 #product_card_body {
     background-image: url("/static/images/95438.jpg");
     color: black;
 }
 #cart_body {
-    background-color:deepskyblue;
+    background-image: url("/static/images/148.jpg");
 }
 #navbar {
-    background-image: url("/static/images/4224.jpg")
+    background-image: url("/static/images/4224.jpg");
+}
+#sales_body {
+    background-image: url("/static/images/148.jpg");
+}
+#address_cost {
+    margin-left: 0px;
 }
