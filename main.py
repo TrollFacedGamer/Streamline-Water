@@ -124,15 +124,17 @@ def product_page(product_id):
     conn.close()
     # used to not DDOX the database
 
+    average_rating = 0
+    for rating in reviews["rating"]:
+        average_rating += float(rating)
+    average_rating /= len(reviews["rating"])
+
     if result is None:
         abort(404)
         #redirect to 404 page
-    return render_template("product.html.jinja", product = result, reviews = reviews, customer = customer, product_id = product_id)
+    return render_template("product.html.jinja", product = result, reviews = reviews, customer = customer, product_id = product_id, average_rating = average_rating)
     # if you return with a string the page will just have that string 
     
-
-    
-
 @app.route("/sign_up", methods=["POST", "GET"])
 def sign_up_page():
     if flask_login.current_user.is_authenticated:
@@ -449,19 +451,36 @@ def address_update():
 
 @app.route("/product/<product_id>/review", methods=["POST"])
 @flask_login.login_required
-def review():
+def review(product_id):
     conn = connect_db()
     cursor = conn.cursor()
     customer_id = flask_login.current_user.id
-    address = request.form["input_address"]
+    review_rating = request.form["review_rating"]
+    review_title = request.form["review_title"]
+    review_text = request.form["review_text"]
 
-    cursor.execute(f"""
-        UPDATE Customer
-        SET `address` = '{address}'
-        WHERE     
-            `Customer`.`id` = {customer_id};
-    """)
-    
-    cursor.close()
-    conn.close()
-    return redirect("/product/<product_id>")
+    try:
+        cursor.execute(f"""
+            INSERT INTO Review 
+                (`product_id`, `customer_id`, `rating`, `comment`, `title`)
+            VALUES 
+                ('{product_id}', '{customer_id}', '{review_rating}', '{review_text}', '{review_title}');
+        """)
+    except pymysql.err.IntegrityError:
+        cursor.execute(f"""
+            UPDATE Review
+            SET 
+                `rating` = '{review_rating}',
+                `comment` = '{review_title}',
+                `title` = '{review_text}'
+            WHERE     
+                `product_id` = '{product_id}'
+                AND
+                `customer_id` = '{customer_id}';
+        """)
+    else:
+        flash("Sorry, something when wrong")
+    finally:
+        cursor.close()
+        conn.close()    
+    return redirect(f"/product/{product_id}")
