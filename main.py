@@ -3,6 +3,7 @@ import pymysql
 # classses are capitalized
 from dynaconf import Dynaconf
 import flask_login
+import datetime
 
 app = Flask(__name__)
 
@@ -86,18 +87,19 @@ def product_browse():
 
 @app.route("/product/<product_id>")
 def product_page(product_id):
-    customer_id = flask_login.current_user.id
-
+    current_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
     conn = connect_db()
-
     cursor = conn.cursor()
 
     cursor.execute(f"SELECT * FROM `Product` WHERE `id` = {product_id};")
     # SELECT * refers to all column
-
     # conn and cursor will be gray and unusable when put after return
-
     result = cursor.fetchone()
+
+    if result is None:
+        abort(404)
+        #redirect to 404 page
 
     cursor.execute(f"""
                     SELECT  
@@ -114,26 +116,46 @@ def product_page(product_id):
                     WHERE
                         product_id = {product_id};
                     """)
-
     reviews = cursor.fetchall()
 
-    cursor.execute(f"SELECT * FROM `Customer` WHERE `id` = {customer_id}")
-    customer = cursor.fetchone
-
-    cursor.close()
-    conn.close()
-    # used to not DDOX the database
-
     average_rating = 0
-    for rating in reviews["rating"]:
-        average_rating += float(rating)
-    average_rating /= len(reviews["rating"])
+    for rating in reviews:
+        average_rating += float(rating["rating"])
+    if len(reviews) == 0:
+        average_rating = 0
+    else:
+        average_rating /= len(reviews)
 
-    if result is None:
-        abort(404)
-        #redirect to 404 page
-    return render_template("product.html.jinja", product = result, reviews = reviews, customer = customer, product_id = product_id, average_rating = average_rating)
-    # if you return with a string the page will just have that string 
+    if flask_login.current_user.is_authenticated:
+        customer_id = flask_login.current_user.id
+
+        cursor.execute(f"SELECT * FROM `Customer` WHERE `id` = {customer_id}")
+        customer = cursor.fetchone
+        
+        cursor.close()
+        conn.close()
+        # used to not DDOX the database
+        
+        return render_template("product.html.jinja", 
+                                product = result, 
+                                reviews = reviews, 
+                                customer = customer, 
+                                product_id = product_id, 
+                                average_rating = average_rating,
+                                flask_login = flask_login,
+                                current_date = current_date)
+    else:
+        cursor.close()
+        conn.close()
+        # used to not DDOX the database
+        return render_template("product.html.jinja", 
+                                product = result, 
+                                reviews = reviews, 
+                                product_id = product_id,
+                                average_rating = average_rating,
+                                flask_login = flask_login,
+                                current_date = current_date)
+        # if you return with a string the page will just have that string 
     
 @app.route("/sign_up", methods=["POST", "GET"])
 def sign_up_page():
@@ -484,3 +506,50 @@ def review(product_id):
         cursor.close()
         conn.close()    
     return redirect(f"/product/{product_id}")
+
+@app.route("/past_orders")
+@flask_login.login_required
+def past_orders_page():
+    customer_id = flask_login.current_user.id
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    cursor.execute(f"""
+        SELECT  
+            `Sale`.`id`,
+            `Sale`.`customer_id`,
+            `Sale`.`status`,
+            `Sale`.`date`,
+            `Customer`.`username`,
+            `Customer`.`first_name`,
+            `Customer`.`last_name`,
+            `Customer`.`email`,
+            `Customer`.`phone_number`,
+            `Customer`.`address`
+        FROM 
+            Sale
+        JOIN 
+            Customer ON `customer_id`= `Customer`.`id`
+        WHERE
+            `Customer`.`id` = {customer_id};
+    """)
+    orders = cursor.fetchall()
+
+    # cursor.execute(f"""
+    #     SELECT 
+    #     `SaleProduct`.`sale_id`,
+    #     `SaleProduct`.`product_id`,
+    #     `SaleProduct`.`quantity`,
+    #     `Product`.`name`,
+    #     `Product`.`stock,
+    #     `Product`.`price`,
+    #     `Product`.`image`
+    #     FROM SaleProduct
+    #     JOIN Product ON `product_id` = `Product`.`id`
+    # """)
+    
+    # order_product = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()   
+    return render_template("past_orders.html.jinja", orders = orders)
